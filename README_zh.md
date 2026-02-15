@@ -276,32 +276,7 @@ telsh/
 - 固定线程池，不动态创建/销毁
 - Joinable 线程，优雅关闭
 
-## 与原始 telnet-server 对比
 
-| 维度 | 旧 (telnet-server) | 新 (telsh) |
-|------|-------------------|------------|
-| 语言标准 | C++11 | C++17 |
-| 依赖 | boost (asio/any/algorithm) | 纯 POSIX socket |
-| 代码量 | ~1050 行 (14 文件) | ~900 行 (3 个 hpp) |
-| 堆分配 | new TelnetSession, std::map, std::string | 零堆分配 |
-| Session 管理 | 裸 new + detach | 固定池 + joinable thread |
-| IAC 状态 | 全局 static (多 session 冲突) | per-session 成员变量 |
-| 命令注册 | boost::any + 运行时匹配 | 函数指针 + void* ctx |
-| 命令容量 | 无限制（std::map） | 固定 64 条 |
-| 历史记录 | 无 | 支持（最多 16 条） |
-| 认证 | 无 | 可选用户名/密码 |
-| 测试 | 无 | 28 Catch2 test cases |
-| 嵌入式适配 | 否 | 是（零堆分配） |
-
-### 主要改进
-
-1. 移除 boost 依赖，纯 POSIX 实现
-2. 零堆分配，固定容量设计
-3. Per-session IAC 状态机，多 session 安全
-4. Joinable 线程管理，优雅关闭
-5. 统一命令签名，简化注册
-6. 完整测试覆盖（28 test cases）
-7. 命令历史和认证支持
 
 ## 测试
 
