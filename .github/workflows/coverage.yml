@@ -33,7 +33,7 @@ jobs:
           cd build
           lcov --directory . --capture --output-file coverage.info --ignore-errors source
           lcov --remove coverage.info '/usr/*' '*/tests/*' '*/_deps/*' '*/CMakeFiles/*' --output-file coverage.info
-          lcov --list coverage.info
+          lcov --list coverage.info || true
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
