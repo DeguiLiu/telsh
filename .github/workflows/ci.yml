@@ -8,33 +8,17 @@ on:
 
 jobs:
   build:
+    runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-            build_type: Debug
-          - os: ubuntu-latest
-            build_type: Release
-          - os: macos-latest
-            build_type: Debug
-          - os: macos-latest
-            build_type: Release
-    runs-on: ${{ matrix.os }}
+        build_type: [Debug, Release]
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install dependencies (Ubuntu)
-      if: runner.os == 'Linux'
+    - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake clang-format clang-tidy
-        pip install cpplint
-
-    - name: Install dependencies (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew install cmake clang-format
         pip install cpplint
 
     - name: Configure CMake
@@ -43,7 +27,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
     - name: Build
-      run: cmake --build build -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+      run: cmake --build build -j$(nproc)
 
     - name: Run tests
       run: cd build && ctest --output-on-failure
@@ -54,13 +38,11 @@ jobs:
           xargs -0 clang-format --dry-run --Werror
 
     - name: Run cpplint
-      if: runner.os == 'Linux'
       run: |
         find include tests examples -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.cpp' \) -print0 | \
           xargs -0 cpplint --filter=-legal/copyright || true
 
     - name: Run clang-tidy
-      if: runner.os == 'Linux'
       run: |
         find include tests examples -type f -name '*.cpp' -print0 | \
           xargs -0 clang-tidy --checks=*,-fuchsia-* -- -I./include || true
