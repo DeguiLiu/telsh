@@ -32,7 +32,7 @@ jobs:
         run: |
           cd build
           lcov --directory . --capture --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' '*/tests/*' --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/_deps/*' --output-file coverage.info
           lcov --list coverage.info
 
       - name: Upload coverage to Codecov

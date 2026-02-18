@@ -18,7 +18,8 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake clang-format clang-tidy cppcheck
+        sudo apt-get install -y cmake clang-format clang-tidy
+        pip install cpplint
 
     - name: Configure CMake
       run: |
@@ -33,15 +34,15 @@ jobs:
 
     - name: Check clang-format
       run: |
-        find include tests examples \( -name '*.h' -o -name '*.hpp' -o -name '*.cpp' \) -print0 | \
+        find include tests examples -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.cpp' \) -print0 | \
           xargs -0 clang-format --dry-run --Werror
 
     - name: Run cpplint
       run: |
-        find include tests examples \( -name '*.h' -o -name '*.hpp' -o -name '*.cpp' \) -print0 | \
+        find include tests examples -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.cpp' \) -print0 | \
           xargs -0 cpplint --filter=-legal/copyright || true
 
-    - name: Run cppcheck
+    - name: Run clang-tidy
       run: |
-        cppcheck --enable=all --suppress=missingIncludeSystem \
-          include/ tests/ examples/ || true
+        find include tests examples -type f -name '*.cpp' -print0 | \
+          xargs -0 clang-tidy --checks=*,-fuchsia-* -- -I./include || true
