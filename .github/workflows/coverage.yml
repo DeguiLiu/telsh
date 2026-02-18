@@ -23,7 +23,7 @@ jobs:
             -DCMAKE_CXX_FLAGS="--coverage -fprofile-arcs -ftest-coverage"
 
       - name: Build
-        run: cmake --build build -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+        run: cmake --build build -j$(nproc)
 
       - name: Run tests
         run: cd build && ctest --output-on-failure
