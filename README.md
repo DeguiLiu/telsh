@@ -1,5 +1,9 @@
 # telsh - Embedded Telnet Debug Shell
 
+[![CI](https://github.com/DeguiLiu/telsh/actions/workflows/ci.yml/badge.svg)](https://github.com/DeguiLiu/telsh/actions/workflows/ci.yml)
+[![Code Coverage](https://github.com/DeguiLiu/telsh/actions/workflows/coverage.yml/badge.svg)](https://github.com/DeguiLiu/telsh/actions/workflows/coverage.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A C++17 header-only embedded telnet debug shell for industrial embedded systems.
 
 **License:** MIT
