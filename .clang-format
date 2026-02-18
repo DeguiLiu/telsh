@@ -16,7 +16,6 @@ UseTab: Never
 AccessModifierOffset: -1
 IndentCaseLabels: true
 IndentPPDirectives: None
-IndentWrappedFunctionNames: false
 NamespaceIndentation: None
 
 # =============================================================================

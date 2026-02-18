@@ -40,6 +40,7 @@
 
 #include <cstdint>
 #include <cstring>
+
 #include <new>
 #include <type_traits>
 #include <utility>
@@ -50,39 +51,21 @@ namespace osp {
 // Error Enums (module-specific)
 // ============================================================================
 
-enum class ConfigError : uint8_t {
-  kFileNotFound = 0,
-  kParseError,
-  kFormatNotSupported,
-  kBufferFull
-};
+enum class ConfigError : uint8_t { kFileNotFound = 0, kParseError, kFormatNotSupported, kBufferFull };
 
-enum class TimerError : uint8_t {
-  kSlotsFull = 0,
-  kInvalidPeriod,
-  kNotRunning,
-  kAlreadyRunning
-};
+enum class TimerError : uint8_t { kSlotsFull = 0, kInvalidPeriod, kNotRunning, kAlreadyRunning };
 
-enum class ShellError : uint8_t {
-  kRegistryFull = 0,
-  kDuplicateName,
-  kPortInUse,
-  kNotRunning
-};
+enum class ShellError : uint8_t { kRegistryFull = 0, kDuplicateName, kPortInUse, kNotRunning };
 
-enum class MemPoolError : uint8_t {
-  kPoolExhausted = 0,
-  kInvalidPointer
-};
+enum class MemPoolError : uint8_t { kPoolExhausted = 0, kInvalidPointer };
 
 /// Queue backpressure level indicator.
 /// Enum values are labels only; each module defines its own threshold logic.
 enum class BackpressureLevel : uint8_t {
-  kNormal   = 0U,  ///< Queue utilization is low
-  kWarning  = 1U,  ///< Queue utilization is elevated
+  kNormal = 0U,    ///< Queue utilization is low
+  kWarning = 1U,   ///< Queue utilization is elevated
   kCritical = 2U,  ///< Queue utilization is near capacity
-  kFull     = 3U   ///< Queue is at capacity
+  kFull = 3U       ///< Queue is at capacity
 };
 
 // ============================================================================
@@ -182,9 +165,7 @@ class expected final {
     return err_;
   }
 
-  V value_or(const V& default_val) const noexcept {
-    return has_value_ ? value() : default_val;
-  }
+  V value_or(const V& default_val) const noexcept { return has_value_ ? value() : default_val; }
 
  private:
   expected() noexcept : storage_{}, err_{}, has_value_(false) {}
@@ -298,9 +279,7 @@ class optional final {
     return *reinterpret_cast<const T*>(&storage_);
   }
 
-  T value_or(const T& default_val) const noexcept {
-    return has_value_ ? value() : default_val;
-  }
+  T value_or(const T& default_val) const noexcept { return has_value_ ? value() : default_val; }
 
   void reset() noexcept {
     if (has_value_) {
@@ -334,27 +313,21 @@ class FixedFunction<Ret(Args...), BufferSize> final {
   // NOLINTNEXTLINE(google-explicit-constructor)
   FixedFunction(std::nullptr_t) noexcept {}
 
-  template <typename F,
-            typename = typename std::enable_if<
-                !std::is_same<typename std::decay<F>::type, FixedFunction>::value &&
-                !std::is_same<typename std::decay<F>::type, std::nullptr_t>::value>::type>
+  template <typename F, typename = typename std::enable_if<
+                            !std::is_same<typename std::decay<F>::type, FixedFunction>::value &&
+                            !std::is_same<typename std::decay<F>::type, std::nullptr_t>::value>::type>
   FixedFunction(F&& f) noexcept {  // NOLINT
     using Decay = typename std::decay<F>::type;
-    static_assert(sizeof(Decay) <= BufferSize,
-                  "Callable too large for FixedFunction buffer");
-    static_assert(alignof(Decay) <= alignof(Storage),
-                  "Callable alignment exceeds buffer alignment");
+    static_assert(sizeof(Decay) <= BufferSize, "Callable too large for FixedFunction buffer");
+    static_assert(alignof(Decay) <= alignof(Storage), "Callable alignment exceeds buffer alignment");
     ::new (&storage_) Decay(static_cast<F&&>(f));
     invoker_ = [](const Storage& s, Args... args) -> Ret {
       return (*reinterpret_cast<const Decay*>(&s))(static_cast<Args&&>(args)...);
     };
-    destroyer_ = [](Storage& s) {
-      reinterpret_cast<Decay*>(&s)->~Decay();
-    };
+    destroyer_ = [](Storage& s) { reinterpret_cast<Decay*>(&s)->~Decay(); };
   }
 
-  FixedFunction(FixedFunction&& other) noexcept
-      : invoker_(other.invoker_), destroyer_(other.destroyer_) {
+  FixedFunction(FixedFunction&& other) noexcept : invoker_(other.invoker_), destroyer_(other.destroyer_) {
     if (other.invoker_) {
       std::memcpy(&storage_, &other.storage_, BufferSize);
       other.invoker_ = nullptr;
@@ -429,25 +402,18 @@ template <typename Ret, typename... Args>
 class function_ref<Ret(Args...)> final {
  public:
   template <typename F,
-            typename = typename std::enable_if<
-                !std::is_same<typename std::decay<F>::type, function_ref>::value>::type>
+            typename = typename std::enable_if<!std::is_same<typename std::decay<F>::type, function_ref>::value>::type>
   function_ref(F&& f) noexcept  // NOLINT
-      : obj_(const_cast<void*>(static_cast<const void*>(&f))),
-        invoker_([](void* o, Args... args) -> Ret {
-          return (*static_cast<typename std::remove_reference<F>::type*>(o))(
-              static_cast<Args&&>(args)...);
+      : obj_(const_cast<void*>(static_cast<const void*>(&f))), invoker_([](void* o, Args... args) -> Ret {
+          return (*static_cast<typename std::remove_reference<F>::type*>(o))(static_cast<Args&&>(args)...);
         }) {}
 
   function_ref(Ret (*fn)(Args...)) noexcept  // NOLINT
-      : obj_(reinterpret_cast<void*>(fn)),
-        invoker_([](void* o, Args... args) -> Ret {
-          return reinterpret_cast<Ret (*)(Args...)>(o)(
-              static_cast<Args&&>(args)...);
+      : obj_(reinterpret_cast<void*>(fn)), invoker_([](void* o, Args... args) -> Ret {
+          return reinterpret_cast<Ret (*)(Args...)>(o)(static_cast<Args&&>(args)...);
         }) {}
 
-  Ret operator()(Args... args) const {
-    return invoker_(obj_, static_cast<Args&&>(args)...);
-  }
+  Ret operator()(Args... args) const { return invoker_(obj_, static_cast<Args&&>(args)...); }
 
  private:
   void* obj_;
@@ -499,8 +465,7 @@ class FixedString {
     buf_[size_] = '\0';
   }
 
-  FixedString(TruncateToCapacity_t /*tag*/, const char* str, uint32_t count) noexcept
-      : size_(0U) {
+  FixedString(TruncateToCapacity_t /*tag*/, const char* str, uint32_t count) noexcept : size_(0U) {
     if (str != nullptr) {
       size_ = (count < Capacity) ? count : Capacity;
       (void)std::memcpy(buf_, str, size_);
@@ -631,9 +596,7 @@ class FixedVector final {
   }
 
   reference operator[](uint32_t index) noexcept { return at_unchecked(index); }
-  const_reference operator[](uint32_t index) const noexcept {
-    return at_unchecked(index);
-  }
+  const_reference operator[](uint32_t index) const noexcept { return at_unchecked(index); }
 
   reference front() noexcept { return at_unchecked(0U); }
   const_reference front() const noexcept { return at_unchecked(0U); }
@@ -641,9 +604,7 @@ class FixedVector final {
   const_reference back() const noexcept { return at_unchecked(size_ - 1U); }
 
   pointer data() noexcept { return reinterpret_cast<T*>(storage_); }
-  const_pointer data() const noexcept {
-    return reinterpret_cast<const T*>(storage_);
-  }
+  const_pointer data() const noexcept { return reinterpret_cast<const T*>(storage_); }
 
   iterator begin() noexcept { return data(); }
   const_iterator begin() const noexcept { return data(); }
@@ -656,9 +617,7 @@ class FixedVector final {
   bool full() const noexcept { return size_ >= Capacity; }
 
   bool push_back(const T& value) noexcept { return emplace_back(value); }
-  bool push_back(T&& value) noexcept {
-    return emplace_back(static_cast<T&&>(value));
-  }
+  bool push_back(T&& value) noexcept { return emplace_back(static_cast<T&&>(value)); }
 
   template <typename... CtorArgs>
   bool emplace_back(CtorArgs&&... args) noexcept {
@@ -699,9 +658,7 @@ class FixedVector final {
   }
 
  private:
-  reference at_unchecked(uint32_t index) noexcept {
-    return *(reinterpret_cast<T*>(storage_) + index);
-  }
+  reference at_unchecked(uint32_t index) noexcept { return *(reinterpret_cast<T*>(storage_) + index); }
   const_reference at_unchecked(uint32_t index) const noexcept {
     return *(reinterpret_cast<const T*>(storage_) + index);
   }
@@ -722,17 +679,13 @@ class not_null final {
   static_assert(std::is_pointer<T>::value, "not_null requires a pointer type");
 
  public:
-  explicit not_null(T ptr) noexcept : ptr_(ptr) {
-    OSP_ASSERT(ptr_ != nullptr);
-  }
+  explicit not_null(T ptr) noexcept : ptr_(ptr) { OSP_ASSERT(ptr_ != nullptr); }
 
   not_null(std::nullptr_t) = delete;
 
   T get() const noexcept { return ptr_; }
   T operator->() const noexcept { return ptr_; }
-  typename std::remove_pointer<T>::type& operator*() const noexcept {
-    return *ptr_;
-  }
+  typename std::remove_pointer<T>::type& operator*() const noexcept { return *ptr_; }
 
  private:
   T ptr_;
@@ -755,15 +708,9 @@ class NewType final {
   constexpr explicit NewType(T val) noexcept : val_(val) {}
   constexpr T value() const noexcept { return val_; }
 
-  constexpr bool operator==(NewType rhs) const noexcept {
-    return val_ == rhs.val_;
-  }
-  constexpr bool operator!=(NewType rhs) const noexcept {
-    return val_ != rhs.val_;
-  }
-  constexpr bool operator<(NewType rhs) const noexcept {
-    return val_ < rhs.val_;
-  }
+  constexpr bool operator==(NewType rhs) const noexcept { return val_ == rhs.val_; }
+  constexpr bool operator!=(NewType rhs) const noexcept { return val_ != rhs.val_; }
+  constexpr bool operator<(NewType rhs) const noexcept { return val_ < rhs.val_; }
 
  private:
   T val_;
@@ -801,8 +748,7 @@ class ScopeGuard final {
   ScopeGuard& operator=(const ScopeGuard&) = delete;
 
   ScopeGuard(ScopeGuard&& other) noexcept
-      : cleanup_(static_cast<FixedFunction<void()>&&>(other.cleanup_)),
-        active_(other.active_) {
+      : cleanup_(static_cast<FixedFunction<void()>&&>(other.cleanup_)), active_(other.active_) {
     other.active_ = false;
   }
 
@@ -820,9 +766,11 @@ class ScopeGuard final {
  *   FILE* f = fopen("x.txt", "r");
  *   OSP_SCOPE_EXIT(fclose(f));
  */
-#define OSP_SCOPE_EXIT(...)                                                 \
-  ::osp::ScopeGuard OSP_CONCAT(_scope_guard_, __LINE__) {                  \
-    ::osp::FixedFunction<void()> { [&]() { __VA_ARGS__; } }               \
+#define OSP_SCOPE_EXIT(...)                               \
+  ::osp::ScopeGuard OSP_CONCAT(_scope_guard_, __LINE__) { \
+    ::osp::FixedFunction<void()> {                        \
+      [&]() { __VA_ARGS__; }                              \
+    }                                                     \
   }
 
 // ============================================================================
@@ -833,8 +781,7 @@ class ScopeGuard final {
  * @brief If result has value, invoke fn with it and return the result.
  */
 template <typename V, typename E, typename F>
-auto and_then(const expected<V, E>& result, F&& fn)
-    -> decltype(fn(result.value())) {
+auto and_then(const expected<V, E>& result, F&& fn) -> decltype(fn(result.value())) {
   using ReturnType = decltype(fn(result.value()));
   if (result.has_value()) {
     return fn(result.value());

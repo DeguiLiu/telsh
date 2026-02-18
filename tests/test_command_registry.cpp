@@ -1,10 +1,11 @@
 // Copyright (c) 2024 liudegui. MIT License.
 // Tests for telsh::CommandRegistry and ShellSplit.
 
-#include <catch2/catch_test_macros.hpp>
+#include "telsh/command_registry.hpp"
+
 #include <cstring>
 
-#include "telsh/command_registry.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 using namespace telsh;
 
@@ -90,17 +91,22 @@ TEST_CASE("ShellSplit: nullptr input", "[command_registry]") {
 // ============================================================================
 
 static int test_cmd_ok(int argc, char* argv[], void* ctx) {
-  (void)argc; (void)argv; (void)ctx;
+  (void)argc;
+  (void)argv;
+  (void)ctx;
   return 0;
 }
 
 static int test_cmd_fail(int argc, char* argv[], void* ctx) {
-  (void)argc; (void)argv; (void)ctx;
+  (void)argc;
+  (void)argv;
+  (void)ctx;
   return 42;
 }
 
 static int test_cmd_ctx(int argc, char* argv[], void* ctx) {
-  (void)argc; (void)argv;
+  (void)argc;
+  (void)argv;
   auto* val = static_cast<int*>(ctx);
   (*val)++;
   return 0;
@@ -142,7 +148,10 @@ TEST_CASE("CommandRegistry: execute command", "[command_registry]") {
   reg.Register("fail", "returns 42", test_cmd_fail);
 
   // Capture output
-  struct OutCtx { char buf[256]; uint32_t len; };
+  struct OutCtx {
+    char buf[256];
+    uint32_t len;
+  };
   OutCtx out = {{}, 0};
   auto output_fn = [](const char* str, uint32_t len, void* ctx) {
     auto* o = static_cast<OutCtx*>(ctx);
@@ -162,7 +171,10 @@ TEST_CASE("CommandRegistry: execute command", "[command_registry]") {
 TEST_CASE("CommandRegistry: execute unknown command", "[command_registry]") {
   CommandRegistry reg;
 
-  struct OutCtx { char buf[256]; uint32_t len; };
+  struct OutCtx {
+    char buf[256];
+    uint32_t len;
+  };
   OutCtx out = {{}, 0};
   auto output_fn = [](const char* str, uint32_t len, void* ctx) {
     auto* o = static_cast<OutCtx*>(ctx);
@@ -231,7 +243,10 @@ TEST_CASE("CommandRegistry: help command", "[command_registry]") {
   reg.Register("test1", "First test", test_cmd_ok);
   reg.Register("test2", "Second test", test_cmd_ok);
 
-  struct OutCtx { char buf[1024]; uint32_t len; };
+  struct OutCtx {
+    char buf[1024];
+    uint32_t len;
+  };
   OutCtx out = {{}, 0};
   auto output_fn = [](const char* str, uint32_t len, void* ctx) {
     auto* o = static_cast<OutCtx*>(ctx);

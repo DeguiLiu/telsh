@@ -4,13 +4,14 @@
 // Note: These tests exercise the session logic without a real socket.
 // We use a socketpair to simulate a telnet connection.
 
-#include <catch2/catch_test_macros.hpp>
+#include "telsh/telnet_session.hpp"
+
 #include <cstring>
+
+#include <catch2/catch_test_macros.hpp>
 #include <sys/socket.h>
 #include <thread>
 #include <unistd.h>
-
-#include "telsh/telnet_session.hpp"
 
 using namespace telsh;
 
@@ -40,7 +41,9 @@ struct SessionFixture {
   }
 
   ~SessionFixture() {
-    if (client_fd >= 0) { close(client_fd); }
+    if (client_fd >= 0) {
+      close(client_fd);
+    }
     if (session_thread.joinable()) {
       session.Stop();
       session_thread.join();
@@ -70,8 +73,12 @@ struct SessionFixture {
     setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
     ssize_t n = read(client_fd, buf, size - 1);
-    if (n > 0) { buf[n] = '\0'; }
-    else { buf[0] = '\0'; n = 0; }
+    if (n > 0) {
+      buf[n] = '\0';
+    } else {
+      buf[0] = '\0';
+      n = 0;
+    }
     return static_cast<int>(n);
   }
 
@@ -138,7 +145,9 @@ TEST_CASE("TelnetSession: execute command", "[telnet_session]") {
   static bool cmd_called = false;
   cmd_called = false;
   auto test_fn = [](int argc, char* argv[], void* ctx) -> int {
-    (void)argc; (void)argv; (void)ctx;
+    (void)argc;
+    (void)argv;
+    (void)ctx;
     cmd_called = true;
     return 0;
   };

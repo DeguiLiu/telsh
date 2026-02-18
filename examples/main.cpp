@@ -6,12 +6,13 @@
 //   ./telsh_example
 //   # Then: telnet 127.0.0.1 2500
 
+#include "telsh/telnet_server.hpp"
+
 #include <csignal>
 #include <cstdio>
 #include <cstring>
-#include <thread>
 
-#include "telsh/telnet_server.hpp"
+#include <thread>
 
 // ============================================================================
 // Example commands registered via TELSH_CMD macro
@@ -57,7 +58,8 @@ struct Counter {
 };
 
 static int cmd_count(int argc, char* argv[], void* ctx) {
-  (void)argc; (void)argv;
+  (void)argc;
+  (void)argv;
   auto* c = static_cast<Counter*>(ctx);
   c->value++;
   telsh::TelnetServer::Printf("Counter: %d\r\n", c->value);
@@ -85,8 +87,7 @@ int main() {
 
   // Register commands with context
   Counter counter;
-  telsh::CommandRegistry::Instance().Register(
-      "count", "Increment and show counter", cmd_count, &counter);
+  telsh::CommandRegistry::Instance().Register("count", "Increment and show counter", cmd_count, &counter);
 
   // Configure server
   telsh::ServerConfig config;

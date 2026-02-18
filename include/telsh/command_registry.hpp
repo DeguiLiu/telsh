@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+
 #include <mutex>
 
 namespace telsh {
@@ -57,8 +58,8 @@ inline int ShellSplit(char* cmdline, char* argv[], int max_args) {
 
   int argc = 0;
   char* p = cmdline;
-  bool in_sq = false;   // inside single quotes
-  bool in_dq = false;   // inside double quotes
+  bool in_sq = false;  // inside single quotes
+  bool in_dq = false;  // inside double quotes
   bool in_arg = false;
 
   while (*p != '\0') {
@@ -78,10 +79,14 @@ inline int ShellSplit(char* cmdline, char* argv[], int max_args) {
       // Remove quote by shifting left
       char* dst = p;
       char* src = p + 1;
-      while (*src != '\0') { *dst++ = *src++; }
+      while (*src != '\0') {
+        *dst++ = *src++;
+      }
       *dst = '\0';
       if (!in_arg) {
-        if (argc >= max_args) { return -1; }
+        if (argc >= max_args) {
+          return -1;
+        }
         argv[argc++] = p;
         in_arg = true;
       }
@@ -92,10 +97,14 @@ inline int ShellSplit(char* cmdline, char* argv[], int max_args) {
       in_dq = !in_dq;
       char* dst = p;
       char* src = p + 1;
-      while (*src != '\0') { *dst++ = *src++; }
+      while (*src != '\0') {
+        *dst++ = *src++;
+      }
       *dst = '\0';
       if (!in_arg) {
-        if (argc >= max_args) { return -1; }
+        if (argc >= max_args) {
+          return -1;
+        }
         argv[argc++] = p;
         in_arg = true;
       }
@@ -103,7 +112,9 @@ inline int ShellSplit(char* cmdline, char* argv[], int max_args) {
     }
 
     if (!in_arg) {
-      if (argc >= max_args) { return -1; }
+      if (argc >= max_args) {
+        return -1;
+      }
       argv[argc++] = p;
       in_arg = true;
     }
@@ -129,16 +140,21 @@ class CommandRegistry {
   CommandRegistry& operator=(const CommandRegistry&) = delete;
 
   /// Register a command.  @p name and @p desc must be static storage.
-  bool Register(const char* name, const char* desc,
-                CmdFn fn, void* ctx = nullptr) {
-    if (name == nullptr || fn == nullptr) { return false; }
+  bool Register(const char* name, const char* desc, CmdFn fn, void* ctx = nullptr) {
+    if (name == nullptr || fn == nullptr) {
+      return false;
+    }
 
     std::lock_guard<std::mutex> lock(mutex_);
-    if (count_ >= kMaxCommands) { return false; }
+    if (count_ >= kMaxCommands) {
+      return false;
+    }
 
     // Reject duplicates
     for (uint32_t i = 0; i < count_; ++i) {
-      if (std::strcmp(entries_[i].name, name) == 0) { return false; }
+      if (std::strcmp(entries_[i].name, name) == 0) {
+        return false;
+      }
     }
 
     entries_[count_] = {name, desc, fn, ctx};
@@ -151,12 +167,18 @@ class CommandRegistry {
   /// @param output_ctx context for output_fn
   /// @return command return code, -1 = not found, -2 = parse error
   int Execute(char* cmdline, OutputFn output_fn, void* output_ctx) {
-    if (cmdline == nullptr) { return -2; }
+    if (cmdline == nullptr) {
+      return -2;
+    }
 
     char* argv[kMaxArgs];
     int argc = ShellSplit(cmdline, argv, kMaxArgs);
-    if (argc < 0) { return -2; }
-    if (argc == 0) { return 0; }
+    if (argc < 0) {
+      return -2;
+    }
+    if (argc == 0) {
+      return 0;
+    }
 
     // Built-in: help
     if (std::strcmp(argv[0], "help") == 0) {
@@ -175,16 +197,19 @@ class CommandRegistry {
     // Not found
     if (output_fn != nullptr) {
       char buf[128];
-      int n = std::snprintf(buf, sizeof(buf),
-                            "Unknown command: %s\r\n", argv[0]);
-      if (n > 0) { output_fn(buf, static_cast<uint32_t>(n), output_ctx); }
+      int n = std::snprintf(buf, sizeof(buf), "Unknown command: %s\r\n", argv[0]);
+      if (n > 0) {
+        output_fn(buf, static_cast<uint32_t>(n), output_ctx);
+      }
     }
     return -1;
   }
 
   /// Find command by name.
   const CmdEntry* FindByName(const char* name) const {
-    if (name == nullptr) { return nullptr; }
+    if (name == nullptr) {
+      return nullptr;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
     for (uint32_t i = 0; i < count_; ++i) {
       if (std::strcmp(entries_[i].name, name) == 0) {
@@ -216,7 +241,9 @@ class CommandRegistry {
 
  private:
   void PrintHelp(OutputFn output_fn, void* output_ctx) {
-    if (output_fn == nullptr) { return; }
+    if (output_fn == nullptr) {
+      return;
+    }
 
     const char* hdr = "Available commands:\r\n";
     output_fn(hdr, static_cast<uint32_t>(std::strlen(hdr)), output_ctx);
@@ -224,10 +251,11 @@ class CommandRegistry {
     std::lock_guard<std::mutex> lock(mutex_);
     for (uint32_t i = 0; i < count_; ++i) {
       char buf[128];
-      int n = std::snprintf(buf, sizeof(buf), "  %-16s - %s\r\n",
-                            entries_[i].name,
+      int n = std::snprintf(buf, sizeof(buf), "  %-16s - %s\r\n", entries_[i].name,
                             entries_[i].desc ? entries_[i].desc : "");
-      if (n > 0) { output_fn(buf, static_cast<uint32_t>(n), output_ctx); }
+      if (n > 0) {
+        output_fn(buf, static_cast<uint32_t>(n), output_ctx);
+      }
     }
   }
 
@@ -254,10 +282,9 @@ class CmdAutoReg {
 ///     // ...
 ///     return 0;
 ///   }
-#define TELSH_CMD(name, desc)                                       \
-  static int telsh_cmd_##name(int argc, char* argv[], void* ctx);   \
-  static ::telsh::CmdAutoReg telsh_reg_##name(                      \
-      #name, desc, telsh_cmd_##name);                               \
+#define TELSH_CMD(name, desc)                                                 \
+  static int telsh_cmd_##name(int argc, char* argv[], void* ctx);             \
+  static ::telsh::CmdAutoReg telsh_reg_##name(#name, desc, telsh_cmd_##name); \
   static int telsh_cmd_##name(int argc, char* argv[], void* ctx)
 
 }  // namespace telsh
